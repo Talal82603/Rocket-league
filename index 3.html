@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Rocket League Mini</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#07111c;color:#fff;font-family:Arial,sans-serif;touch-action:none}
+canvas{display:block;width:100%;height:100%}
+#menu{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(#07111cee,#07111cdd);z-index:5}
+.box{width:min(92%,520px);background:#101b28;border:1px solid #31506b;border-radius:24px;padding:28px;box-shadow:0 20px 70px #0008;text-align:center}
+h1{font-size:44px;margin:0 0 5px}h1 span{color:#4dc8ff}.sub{color:#a9bac9;margin:0 0 22px}
+button{border:0;border-radius:14px;padding:13px 18px;background:#1688d9;color:white;font-weight:800;font-size:16px;cursor:pointer}
+button.alt{background:#26394c}.row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+#hud{position:absolute;inset:0;pointer-events:none;z-index:2}
+.score{position:absolute;top:15px;left:50%;transform:translateX(-50%);font-size:32px;font-weight:900;background:#07111ccc;padding:6px 18px;border-radius:15px}
+#blue{color:#4dc8ff}#orange{color:#ffad4d}.hint{position:absolute;top:72px;left:50%;transform:translateX(-50%);color:#b9c7d4;font-size:12px}
+#touch{position:absolute;bottom:20px;left:0;right:0;display:flex;justify-content:space-between;padding:0 18px;z-index:3;pointer-events:none}
+.pad{display:grid;grid-template-columns:58px 58px 58px;gap:8px;pointer-events:auto}
+.ctrl{width:58px;height:58px;border-radius:50%;background:#ffffff22;border:1px solid #ffffff35;color:#fff;font-size:20px}
+.boost{background:#1b9cf055}.empty{visibility:hidden}
+#garage{display:none;margin-top:18px}.swatch{width:45px;height:45px;border-radius:12px;border:2px solid #fff3;display:inline-block;margin:5px;cursor:pointer}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="hud"><div class="score"><span id="blue">0</span> : <span id="orange">0</span></div><div class="hint">WASD / arrows • Space = boost • R = reset</div></div>
+<div id="touch">
+ <div class="pad">
+  <button class="ctrl empty"></button><button class="ctrl" data-k="up">▲</button><button class="ctrl empty"></button>
+  <button class="ctrl" data-k="left">◀</button><button class="ctrl" data-k="down">▼</button><button class="ctrl" data-k="right">▶</button>
+ </div>
+ <button class="ctrl boost" data-k="boost">⚡</button>
+</div>
+<div id="menu"><div class="box">
+<h1>Rocket <span>League</span> Mini 🚗⚽</h1>
+<p class="sub">A lightweight browser version — drive, boost, hit the ball and score.</p>
+<div class="row"><button id="play">PLAY</button><button class="alt" id="custom">CUSTOMIZE</button></div>
+<div id="garage"><p>Choose car color:</p><div id="colors"></div></div>
+</div></div>
+<script>
+const c=document.getElementById("game"),ctx=c.getContext("2d");let W,H,scale;
+function resize(){W=c.width=innerWidth*devicePixelRatio;H=c.height=innerHeight*devicePixelRatio;ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);W=innerWidth;H=innerHeight}addEventListener("resize",resize);resize();
+const keys={};addEventListener("keydown",e=>{keys[e.key.toLowerCase()]=1;if(e.key===" ")keys.boost=1;if(e.key.toLowerCase()==="r")reset()});addEventListener("keyup",e=>{keys[e.key.toLowerCase()]=0;if(e.key===" ")keys.boost=0});
+document.querySelectorAll("[data-k]").forEach(b=>{let k=b.dataset.k;const on=e=>{e.preventDefault();keys[k]=1},off=e=>{e.preventDefault();keys[k]=0};b.addEventListener("pointerdown",on);b.addEventListener("pointerup",off);b.addEventListener("pointercancel",off);b.addEventListener("pointerleave",off)});
+let carColor="#24a8ff", blue=0,orange=0, playing=false;
+let car,ball,particles=[];
+function reset(){car={x:W*.5,y:H*.72,vx:0,vy:0,a:-Math.PI/2,boost:100};ball={x:W*.5,y:H*.38,vx:0,vy:0,r:18}}
+function field(){ctx.fillStyle="#0b7a45";ctx.fillRect(0,0,W,H);ctx.strokeStyle="#ffffff66";ctx.lineWidth=3;ctx.strokeRect(20,20,W-40,H-40);ctx.beginPath();ctx.moveTo(20,H/2);ctx.lineTo(W-20,H/2);ctx.stroke();ctx.beginPath();ctx.arc(W/2,H/2,75,0,Math.PI*2);ctx.stroke();ctx.fillStyle="#116a3e";ctx.fillRect(20,20,W*.18,120);ctx.fillRect(W-W*.18,20,W*.18,120);ctx.fillRect(20,H-140,W*.18,120);ctx.fillRect(W-W*.18,H-140,W*.18,120)}
+function drawCar(){ctx.save();ctx.translate(car.x,car.y);ctx.rotate(car.a);ctx.fillStyle="#111";ctx.fillRect(-25,-15,50,30);ctx.fillStyle=carColor;ctx.beginPath();ctx.roundRect(-22,-14,44,28,8);ctx.fill();ctx.fillStyle="#bcecff";ctx.fillRect(-6,-10,17,20);ctx.fillStyle="#222";ctx.fillRect(-17,-18,11,5);ctx.fillRect(7,-18,11,5);ctx.fillRect(-17,13,11,5);ctx.fillRect(7,13,11,5);ctx.restore()}
+function draw(){field();ctx.fillStyle="#ff9d32";ctx.fillRect(W/2-65,20,130,8);ctx.fillStyle="#25a9ff";ctx.fillRect(W/2-65,H-28,130,8);
+ctx.beginPath();ctx.fillStyle="#eee";ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#777";ctx.stroke();
+drawCar();particles.forEach(p=>{ctx.globalAlpha=p.life;ctx.fillStyle="#ffd35a";ctx.fillRect(p.x,p.y,4,4)});ctx.globalAlpha=1}
+function physics(){if(!playing)return;let up=keys.w||keys.arrowup||keys.up,down=keys.s||keys.arrowdown||keys.down,left=keys.a||keys.arrowleft||keys.left,right=keys.d||keys.arrowright||keys.right;
+if(left)car.a-=.055;if(right)car.a+=.055;let accel=up?0.38:down?-0.2:0;car.vx+=Math.cos(car.a)*accel;car.vy+=Math.sin(car.a)*accel;
+if((keys[" "]||keys.boost)&&car.boost>0){car.vx+=Math.cos(car.a)*.7;car.vy+=Math.sin(car.a)*.7;car.boost-=.7;particles.push({x:car.x-Math.cos(car.a)*24,y:car.y-Math.sin(car.a)*24,life:1})}else car.boost=Math.min(100,car.boost+.08);
+car.vx*=.985;car.vy*=.985;car.x+=car.vx;car.y+=car.vy;
+if(car.x<45||car.x>W-45){car.vx*=-.7;car.x=Math.max(45,Math.min(W-45,car.x))}
+if(car.y<45||car.y>H-45){car.vy*=-.7;car.y=Math.max(45,Math.min(H-45,car.y))}
+ball.x+=ball.vx;ball.y+=ball.vy;ball.vx*=.994;ball.vy*=.994;
+if(ball.x<40||ball.x>W-40){ball.vx*=-.9;ball.x=Math.max(40,Math.min(W-40,ball.x))}
+if(ball.y<25){if(ball.x>W/2-65&&ball.x<W/2+65){blue++;reset();updateScore();return}else{ball.vy*=-.9;ball.y=35}}
+if(ball.y>H-25){if(ball.x>W/2-65&&ball.x<W/2+65){orange++;reset();updateScore();return}else{ball.vy*=-.9;ball.y=H-35}}
+let dx=ball.x-car.x,dy=ball.y-car.y,d=Math.hypot(dx,dy);if(d<ball.r+28){let nx=dx/d,ny=dy/d;ball.vx=nx*7+car.vx*.5;ball.vy=ny*7+car.vy*.5;ball.x=car.x+nx*(ball.r+29);ball.y=car.y+ny*(ball.r+29)}
+particles.forEach(p=>p.life-=.04);particles=particles.filter(p=>p.life>0)}
+function updateScore(){document.getElementById("blue").textContent=blue;document.getElementById("orange").textContent=orange}
+function loop(){physics();draw();requestAnimationFrame(loop)}reset();loop();
+play.onclick=()=>{playing=true;menu.style.display="none";reset()};
+custom.onclick=()=>{garage.style.display=garage.style.display==="block"?"none":"block"};
+["#24a8ff","#ff4d5d","#a855f7","#22c55e","#facc15","#ffffff"].forEach(x=>{let s=document.createElement("span");s.className="swatch";s.style.background=x;s.onclick=()=>carColor=x;colors.appendChild(s)});
+</script></body></html>
